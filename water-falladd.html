@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdn.bootcss.com/jquery/2.2.3/jquery.min.js"></script>
+    <title>Document</title>
+    <style>
+       html,body,ul,li,p {
+           margin:0;
+           padding:0;
+       }
+       ul,li {
+           list-style: none;
+       }
+       .clearfix:after{
+           content:'';
+           display: block;
+           width: 100%;
+           clear: both;
+       }
+       .ct{
+           position: relative;
+           padding: 10px;
+           margin: 0 auto;
+       }
+       .ct .item {
+           width: 200px;
+           position: absolute;
+           padding: 0 0 10px 0;
+           box-shadow: 2px 2px 2px #e8e8e8;
+           border: 1px solid #dfdfdf;
+           background: #fff;
+           margin: 10px;
+           transition: all .8s
+
+       }
+       .ct .item img {
+           margin: 12px;
+           width: 126px;
+           padding-left: 20px;
+       }
+       .ct .item .header {
+           
+           margin: 0 12px;
+           border-bottom: 1px solid #dbdbdb;
+       }
+       .ct .desp {
+           font-size: 12px;
+           line-height: 1.8;
+           margin: 10px 15px 0;
+           color: #777371
+       }
+       .link {
+           text-align: center
+       }  
+    </style>
+</head>
+<body>
+    <div class = 'ct-waterfall'>
+        <ul id = 'pic-ct' class ='ct clearfix'>
+               <!-- <li class="item">
+                     <a href="#" class="link"><img src='https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=597375154,2905536386&fm=27&gp=0.jpg' alt=""></a>';
+                     <h4 class="header">sodij</h4>
+                     <p class = "desp">afoij </p>
+                  </li> -->
+        </ul>
+        <div id='load'></div>
+    </div>  
+</body>
+<script>
+    var $target = $('#load');
+    var curPage =1 ;
+    var perPageCount = 30;
+    var colSumHeight = [];
+
+     var start = {
+        init: function(){
+            this.$target = $target;
+            this.isLoading = false
+            this.doThing();
+            this.bind();
+           },
+        bind: function(){
+            var _this = this
+            $(window).on('scroll',function(){
+                    if(_this.isShow(this.$target)){
+                        _this.doThing()
+                    }
+                }) },
+        isShow: function($targe){
+            return $(window).height() + $(window).scrollTop() + 20 > $targe.offset().top
+        },
+        doThing: function(){
+            var _this = this
+            if(_this.isLoading){return}
+            else {
+            _this.isLoading = true
+            $.ajax({
+            url: 'http://platform.sina.com.cn/slide/album_tech',
+            type: 'GET',
+            dataType: 'jsonp',
+            jsonp: 'jsoncallback',
+            data:{
+                app_key:'1271687855',
+                format: 'json',
+                size:'img',
+                num: perPageCount,
+                page:curPage
+            },
+            success: function(ret){
+                console.log(ret)
+                if(ret.status.code == 0){
+                    var dataArr = ret.data;
+                    var $nodes = _this.renderData(dataArr)
+                    _this.render($nodes)
+                    curPage++
+                }
+            }
+        }).always(function(){
+            _this.isLoading = false
+        })
+            }
+                
+            
+             },
+        render: function($nodes){
+            var nodeWidth = $nodes.outerWidth(true),
+            colNum = parseInt($(window).width()/nodeWidth);
+
+            if(colSumHeight.length == 0){
+                for(var i=0;i<colNum;i++){
+                    colSumHeight.push(0)
+                }
+            }
+            $nodes.each(function(){
+                var $cur = $(this);
+                $(this).find('img').on('load',function(){  
+                    console.log(10)           
+                var idx = 0, minSumHeight = colSumHeight[0];
+                for(var i = 0;i<colSumHeight.length;i++){
+                    if(colSumHeight[i] < minSumHeight){
+                        idx = i;
+                        minSumHeight = colSumHeight[i]
+                        console.log(i)
+                    }
+                }          
+                $cur.css({
+                    left: nodeWidth*idx,
+                    top: minSumHeight
+                });
+                colSumHeight[idx] = $cur.outerHeight(true) + colSumHeight[idx];
+                $('#pic-ct').height(Math.max.apply(null,colSumHeight))
+             })
+                })       },
+
+            renderData: function(items){
+                var tpl = '',$nodes
+                for( var i=0; i<items.length ; i++){
+                    tpl += '<li class="item">';
+                    tpl += '<a href=' + items[i].url + ' class="link"><img src=' + items[i].img_url +' alt=""></a>';
+                    tpl += '<h4 class="header">'+ items[i].short_name +'</h4>';
+                    tpl += '<p class = "desp">'+ items[i].short_intro+'</p>';
+                    tpl += '</li>';
+
+                }
+                $nodes = $(tpl)
+                $('#pic-ct').append($nodes)
+                return $nodes
+            }   
+    }
+	start.init();
+</script>
+</html>
